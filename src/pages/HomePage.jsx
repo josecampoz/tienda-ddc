@@ -44,15 +44,15 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-ember/5 pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 py-20">
           <div className="max-w-2xl animate-fade-up">
-            <div className="section-label">TiendaOnline DDC · Arquitectura Centrada en Datos</div>
+            <div className="section-label">Tienda DDC · Distribuidor Digital Colombia</div>
             <h1 className="font-display text-5xl md:text-6xl font-black text-white leading-none tracking-tight mt-4">
               Tecnología
               <br />
-              <span className="text-accent">de vanguardia</span>
+              <span className="text-accent">premium en Colombia</span>
             </h1>
             <p className="text-muted text-lg mt-6 leading-relaxed max-w-xl">
-              Los mejores productos tech con la arquitectura de software más moderna.
-              Cada compra genera datos en tiempo real.
+              Los mejores productos tech con precios competitivos y envío a todo el país.
+              Apple, Sony, Samsung, Logitech y más marcas líderes.
             </p>
 
             {/* Stats */}
