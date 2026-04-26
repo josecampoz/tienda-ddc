@@ -5,8 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:web": "vite",
+    "dev:api": "npm --prefix server run dev",
+    "build:web": "vite build",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server:install": "npm --prefix server install",
+    "server:start": "npm --prefix server run start",
+    "prisma:generate": "npm --prefix server run prisma:generate",
+    "prisma:migrate": "npm --prefix server run prisma:migrate",
+    "prisma:seed": "npm --prefix server run prisma:seed"
   },
   "dependencies": {
     "react": "^18.3.1",

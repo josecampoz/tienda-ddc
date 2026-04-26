@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 
 const NAV = [
   { to: '/', label: 'Tienda' },
@@ -9,6 +10,7 @@ const NAV = [
 
 export default function Navbar() {
   const { totalItems } = useCart()
+  const { currentUser, logout } = useAuth()
   const { pathname } = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -46,6 +48,23 @@ export default function Navbar() {
 
         {/* Cart */}
         <div className="flex items-center gap-3">
+          {currentUser ? (
+            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-panel/60">
+              <div className="w-6 h-6 rounded-full bg-accent/10 text-accent text-[10px] font-mono flex items-center justify-center">
+                {currentUser.avatar}
+              </div>
+              <div className="text-xs leading-tight">
+                <div className="text-white">{currentUser.fullName}</div>
+                <div className="text-muted font-mono">Admin activo</div>
+              </div>
+              <button onClick={logout} className="text-xs text-muted hover:text-white font-mono ml-1">Salir</button>
+            </div>
+          ) : (
+            <Link to="/admin" className="hidden lg:inline-block text-xs text-accent hover:text-white font-mono px-2 py-1">
+              Ingresar Admin
+            </Link>
+          )}
+
           <Link
             to="/cart"
             className="relative flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-panel transition-colors group"

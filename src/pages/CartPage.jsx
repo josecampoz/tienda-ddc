@@ -1,9 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { formatPrice } from '../data/products'
+import { useAdminData } from '../context/AdminDataContext'
 
 export default function CartPage() {
   const { items, totalPrice, totalItems, dispatch } = useCart()
+  const { storeSettings } = useAdminData()
   const navigate = useNavigate()
 
   if (items.length === 0) {
@@ -23,8 +25,8 @@ export default function CartPage() {
     )
   }
 
-  const shipping = totalPrice >= 500000 ? 0 : 25000
-  const tax = Math.round(totalPrice * 0.19)
+  const shipping = totalPrice >= storeSettings.freeShippingThreshold ? 0 : 25000
+  const tax = Math.round(totalPrice * (storeSettings.taxRate / 100))
   const total = totalPrice + shipping + tax
 
   return (
@@ -121,11 +123,11 @@ export default function CartPage() {
 
                 {shipping > 0 && (
                   <div className="text-xs text-muted bg-surface rounded-lg p-3 border border-border">
-                    Agrega {formatPrice(500000 - totalPrice)} más para envío gratis
+                    Agrega {formatPrice(storeSettings.freeShippingThreshold - totalPrice)} más para envío gratis
                     <div className="mt-2 h-1.5 rounded-full bg-border overflow-hidden">
                       <div
                         className="h-full bg-accent rounded-full transition-all"
-                        style={{ width: `${Math.min(100, (totalPrice / 500000) * 100)}%` }}
+                        style={{ width: `${Math.min(100, (totalPrice / storeSettings.freeShippingThreshold) * 100)}%` }}
                       />
                     </div>
                   </div>

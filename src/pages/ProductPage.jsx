@@ -1,18 +1,20 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { PRODUCTS, formatPrice, getDiscount } from '../data/products'
+import { formatPrice, getDiscount } from '../data/products'
 import { useCart } from '../context/CartContext'
 import ProductCard from '../components/ProductCard'
 import { useState } from 'react'
+import { useAdminData } from '../context/AdminDataContext'
 
 export default function ProductPage() {
+  const { products } = useAdminData()
   const { id } = useParams()
   const navigate = useNavigate()
   const { dispatch } = useCart()
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
 
-  const product = PRODUCTS.find(p => p.id === id)
-  const related = PRODUCTS.filter(p => p.category === product?.category && p.id !== id).slice(0, 4)
+  const product = products.find(p => p.id === id)
+  const related = products.filter(p => p.category === product?.category && p.id !== id).slice(0, 4)
 
   if (!product) {
     return (

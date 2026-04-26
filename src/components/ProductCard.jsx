@@ -1,15 +1,28 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { formatPrice, getDiscount } from '../data/products'
-import { useState } from 'react'
 
 export default function ProductCard({ product }) {
+  const navigate = useNavigate()
   const { dispatch } = useCart()
   const [added, setAdded] = useState(false)
   const discount = getDiscount(product.price, product.originalPrice)
 
-  const handleAdd = (e) => {
-    e.preventDefault()
+  const openProduct = () => {
+    navigate(`/product/${product.id}`)
+  }
+
+  const handleCardKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      openProduct()
+    }
+  }
+
+  const handleAdd = (event) => {
+    event.preventDefault()
+    event.stopPropagation()
     dispatch({ type: 'ADD_ITEM', product })
     setAdded(true)
     setTimeout(() => setAdded(false), 1800)
@@ -18,9 +31,12 @@ export default function ProductCard({ product }) {
   const stars = Array.from({ length: 5 }, (_, i) => i < Math.round(product.rating))
 
   return (
-    <Link
-      to={`/product/${product.id}`}
-      className="card group flex flex-col cursor-pointer animate-fade-up"
+    <article
+      role="link"
+      tabIndex={0}
+      onClick={openProduct}
+      onKeyDown={handleCardKeyDown}
+      className="card group flex flex-col cursor-pointer animate-fade-up focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
     >
       {/* Image */}
       <div className="relative h-52 overflow-hidden bg-surface">
@@ -58,7 +74,7 @@ export default function ProductCard({ product }) {
         {/* Brand + Category */}
         <div className="flex items-center justify-between">
           <span className="text-xs font-mono text-accent uppercase tracking-wider">{product.brand}</span>
-          <span className="text-xs text-muted capitalize">{product.category}</span>
+          <span className="text-xs text-muted capitalize">{product.categoryLabel || product.category}</span>
         </div>
 
         {/* Name */}
@@ -100,6 +116,7 @@ export default function ProductCard({ product }) {
             )}
           </div>
           <button
+            type="button"
             onClick={handleAdd}
             disabled={product.stock === 0}
             className={`px-3 py-1.5 rounded-lg text-xs font-display font-semibold transition-all duration-200 active:scale-95 ${
@@ -114,6 +131,6 @@ export default function ProductCard({ product }) {
           </button>
         </div>
       </div>
-    </Link>
+    </article>
   )
 }

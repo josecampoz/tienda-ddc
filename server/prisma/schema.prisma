@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  super_admin
+  operations_manager
+  catalog_manager
+  analyst
+  support
+}
+
+enum OrderStatus {
+  pending
+  processing
+  completed
+  canceled
+}
+
+enum CampaignStatus {
+  draft
+  active
+  paused
+  ended
+}
+
+enum DiscountType {
+  percent
+  fixed
+}
+
+model User {
+  id            String   @id @default(cuid())
+  fullName      String
+  email         String   @unique
+  role          Role
+  department    String
+  active        Boolean  @default(true)
+  avatar        String
+  passwordHash  String
+  lastLoginAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  name          String
+  brand         String
+  category      String
+  price         Int
+  originalPrice Int?
+  stock         Int
+  rating        Float    @default(4.5)
+  reviews       Int      @default(0)
+  image         String
+  description   String
+  tags          String[]
+  featured      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Order {
+  id                  String      @id @default(cuid())
+  orderCode           String      @unique
+  customerEmail       String
+  total               Int
+  status              OrderStatus @default(pending)
+  items               Int
+  channel             String      @default("Web")
+  paymentProvider     String      @default("stripe")
+  stripePaymentIntent String?
+  shopifyOrderId      String?
+  shopifySyncStatus   String      @default("pending")
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+}
+
+model Customer {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  phone         String
+  city          String
+  tier          String
+  status        String
+  lifetimeValue Int      @default(0)
+  orders        Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Campaign {
+  id            String         @id @default(cuid())
+  name          String
+  code          String         @unique
+  discountType  DiscountType
+  discountValue Int
+  status        CampaignStatus @default(draft)
+  startsAt      DateTime
+  endsAt        DateTime
+  usageCount    Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model InventoryMovement {
+  id          String   @id @default(cuid())
+  productId   String
+  productName String
+  delta       Int
+  reason      String
+  actor       String
+  createdAt   DateTime @default(now())
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  type      String
+  text      String
+  createdAt DateTime @default(now())
+}
+
+model StoreSetting {
+  id                    String   @id @default(cuid())
+  storeName             String
+  supportEmail          String
+  supportPhone          String
+  taxRate               Int
+  freeShippingThreshold Int
+  currency              String
+  timezone              String
+  updatedAt             DateTime @updatedAt
+}
+
+model StripePayment {
+  id                    String   @id @default(cuid())
+  paymentIntentId       String   @unique
+  orderCode             String?
+  amount                Int
+  currency              String
+  status                String
+  createdAt             DateTime @default(now())
+}
+
+model ShopifySyncLog {
+  id              String   @id @default(cuid())
+  orderCode       String
+  status          String
+  requestPayload  String?
+  responsePayload String?
+  createdAt       DateTime @default(now())
+}

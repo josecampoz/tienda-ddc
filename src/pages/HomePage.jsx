@@ -1,14 +1,16 @@
 import { useState, useMemo } from 'react'
-import { PRODUCTS, CATEGORIES } from '../data/products'
+import { CATEGORIES } from '../data/products'
 import ProductCard from '../components/ProductCard'
+import { useAdminData } from '../context/AdminDataContext'
 
 export default function HomePage() {
+  const { products } = useAdminData()
   const [activeCategory, setActiveCategory] = useState('all')
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState('featured')
 
   const filtered = useMemo(() => {
-    let list = PRODUCTS
+    let list = products
 
     if (activeCategory !== 'all') {
       list = list.filter(p => p.category === activeCategory)
@@ -30,9 +32,10 @@ export default function HomePage() {
       case 'featured':   return [...list].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0))
       default:           return list
     }
-  }, [activeCategory, search, sort])
+  }, [activeCategory, search, sort, products])
 
-  const featured = PRODUCTS.filter(p => p.featured).slice(0, 3)
+  const featured = products.filter(p => p.featured).slice(0, 3)
+  const inStockRate = products.length > 0 ? Math.round((products.filter((p) => p.stock > 0).length / products.length) * 100) : 0
 
   return (
     <div className="min-h-screen">
@@ -55,9 +58,9 @@ export default function HomePage() {
             {/* Stats */}
             <div className="flex gap-8 mt-10">
               {[
-                { label: 'Productos', value: '20' },
+                { label: 'Productos', value: products.length },
                 { label: 'Categorías', value: '5' },
-                { label: 'Stock disponible', value: '98%' },
+                { label: 'Stock disponible', value: `${inStockRate}%` },
               ].map(({ label, value }) => (
                 <div key={label}>
                   <div className="font-display text-2xl font-bold text-white">{value}</div>

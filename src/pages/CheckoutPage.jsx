@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { formatPrice } from '../data/products'
+import { useAdminData } from '../context/AdminDataContext'
 
 const STEPS = ['Contacto', 'Envío', 'Pago', 'Confirmación']
 
@@ -9,9 +10,11 @@ const STRIPE_TEST = { number: '4242 4242 4242 4242', exp: '12/28', cvv: '123' }
 
 export default function CheckoutPage() {
   const { items, totalPrice, totalItems, dispatch } = useCart()
+  const { createOrder, storeSettings } = useAdminData()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [paymentError, setPaymentError] = useState('')
   const [form, setForm] = useState({
     email: 'cliente@ejemplo.com',
     name: '',
@@ -32,8 +35,8 @@ export default function CheckoutPage() {
     return null
   }
 
-  const shipping = totalPrice >= 500000 ? 0 : 25000
-  const tax = Math.round(totalPrice * 0.19)
+  const shipping = totalPrice >= storeSettings.freeShippingThreshold ? 0 : 25000
+  const tax = Math.round(totalPrice * (storeSettings.taxRate / 100))
   const total = totalPrice + shipping + tax
 
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
@@ -69,10 +72,16 @@ export default function CheckoutPage() {
     if (step < 2) { setStep(s => s + 1); return }
     // Simulate payment
     setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      setStep(3)
-      dispatch({ type: 'CLEAR' })
+    setTimeout(async () => {
+      try {
+        await createOrder({ customer: form.email, total, items: totalItems })
+        setStep(3)
+        dispatch({ type: 'CLEAR' })
+      } catch {
+        setPaymentError('No fue posible confirmar la orden en este momento.')
+      } finally {
+        setLoading(false)
+      }
     }, 2200)
   }
 
@@ -198,6 +207,11 @@ export default function CheckoutPage() {
 
                 {/* Navigation */}
                 <div className="flex gap-3 mt-8 pt-5 border-t border-border">
+                  {paymentError && (
+                    <div className="w-full rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
+                      {paymentError}
+                    </div>
+                  )}
                   {step > 0 && (
                     <button onClick={() => setStep(s => s - 1)} className="btn-ghost">
                       ← Atrás
