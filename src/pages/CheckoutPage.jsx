@@ -33,7 +33,7 @@ function FormField({ label, field, type = 'text', placeholder, transform, hint, 
 
 export default function CheckoutPage() {
   const { items, totalPrice, totalItems, dispatch } = useCart()
-  const { createOrder, storeSettings } = useAdminData()
+  const { createOrder, storeSettings, createStripePaymentIntent } = useAdminData()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -92,22 +92,39 @@ export default function CheckoutPage() {
     return Object.keys(e).length === 0
   }
 
-  const next = () => {
+  const next = async () => {
     if (!validate()) return
     if (step < 2) { setStep(s => s + 1); return }
-    // Simulate payment
+    
+    // Step 2: Process payment
     setLoading(true)
-    setTimeout(async () => {
-      try {
-        await createOrder({ customer: form.email, total, items: totalItems })
-        setStep(3)
-        dispatch({ type: 'CLEAR' })
-      } catch {
-        setPaymentError('No fue posible confirmar la orden en este momento.')
-      } finally {
-        setLoading(false)
-      }
-    }, 2200)
+    setPaymentError('')
+    
+    try {
+      // Create payment intent with Stripe
+      const paymentResponse = await createStripePaymentIntent({
+        amount: total,
+        currency: 'cop',
+      })
+
+      // Create order in database
+      const orderResponse = await createOrder({
+        customer: form.email,
+        total,
+        items: totalItems,
+        paymentProvider: 'stripe',
+        stripePaymentIntent: paymentResponse.paymentIntentId,
+      })
+
+      // Success - go to confirmation step
+      setStep(3)
+      dispatch({ type: 'CLEAR' })
+    } catch (error) {
+      console.error('[v0] Payment error:', error.message)
+      setPaymentError(error.message || 'No fue posible procesar el pago. Por favor intenta de nuevo.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   
