@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { formatPrice } from '../data/products'
@@ -8,9 +8,32 @@ const STEPS = ['Contacto', 'Envío', 'Pago', 'Confirmación']
 
 const STRIPE_TEST = { number: '4242 4242 4242 4242', exp: '12/28', cvv: '123' }
 
+// Field component defined OUTSIDE CheckoutPage to prevent re-creation on every render
+function FormField({ label, field, type = 'text', placeholder, transform, hint, value, onChange, error }) {
+  const handleChange = (e) => {
+    const v = transform ? transform(e.target.value) : e.target.value
+    onChange(field, v)
+  }
+
+  return (
+    <div>
+      <label className="block text-xs font-mono text-muted mb-1.5">{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={handleChange}
+        placeholder={placeholder}
+        className={`input-field ${error ? 'border-danger' : ''}`}
+      />
+      {error && <p className="text-xs text-danger mt-1">{error}</p>}
+      {hint && !error && <p className="text-xs text-muted/60 mt-1 font-mono">{hint}</p>}
+    </div>
+  )
+}
+
 export default function CheckoutPage() {
   const { items, totalPrice, totalItems, dispatch } = useCart()
-  const { createOrder, storeSettings } = useAdminData()
+  const { createOrder, storeSettings, createStripePaymentIntent } = useAdminData()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -39,7 +62,9 @@ export default function CheckoutPage() {
   const tax = Math.round(totalPrice * (storeSettings.taxRate / 100))
   const total = totalPrice + shipping + tax
 
-  const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
+  const handleFieldChange = useCallback((field, value) => {
+    setForm(f => ({ ...f, [field]: value }))
+  }, [])
 
   const formatCard = (val) => val.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim().slice(0, 19)
   const formatExpiry = (val) => {
@@ -67,41 +92,42 @@ export default function CheckoutPage() {
     return Object.keys(e).length === 0
   }
 
-  const next = () => {
+  const next = async () => {
     if (!validate()) return
     if (step < 2) { setStep(s => s + 1); return }
-    // Simulate payment
+    
+    // Step 2: Process payment
     setLoading(true)
-    setTimeout(async () => {
-      try {
-        await createOrder({ customer: form.email, total, items: totalItems })
-        setStep(3)
-        dispatch({ type: 'CLEAR' })
-      } catch {
-        setPaymentError('No fue posible confirmar la orden en este momento.')
-      } finally {
-        setLoading(false)
-      }
-    }, 2200)
+    setPaymentError('')
+    
+    try {
+      // Create payment intent with Stripe
+      const paymentResponse = await createStripePaymentIntent({
+        amount: total,
+        currency: 'cop',
+      })
+
+      // Create order in database
+      const orderResponse = await createOrder({
+        customer: form.email,
+        total,
+        items: totalItems,
+        paymentProvider: 'stripe',
+        stripePaymentIntent: paymentResponse.paymentIntentId,
+      })
+
+      // Success - go to confirmation step
+      setStep(3)
+      dispatch({ type: 'CLEAR' })
+    } catch (error) {
+      console.error('[v0] Payment error:', error.message)
+      setPaymentError(error.message || 'No fue posible procesar el pago. Por favor intenta de nuevo.')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const Field = ({ label, field, type = 'text', placeholder, transform, hint }) => (
-    <div>
-      <label className="block text-xs font-mono text-muted mb-1.5">{label}</label>
-      <input
-        type={type}
-        value={form[field]}
-        onChange={(e) => {
-          const v = transform ? transform(e.target.value) : e.target.value
-          setForm(f => ({ ...f, [field]: v }))
-        }}
-        placeholder={placeholder}
-        className={`input-field ${errors[field] ? 'border-danger' : ''}`}
-      />
-      {errors[field] && <p className="text-xs text-danger mt-1">{errors[field]}</p>}
-      {hint && !errors[field] && <p className="text-xs text-muted/60 mt-1 font-mono">{hint}</p>}
-    </div>
-  )
+  
 
   return (
     <div className="min-h-screen">
@@ -136,9 +162,9 @@ export default function CheckoutPage() {
                 {step === 0 && (
                   <div className="flex flex-col gap-5 animate-fade-up">
                     <h2 className="font-display text-xl font-bold text-white">Información de contacto</h2>
-                    <Field label="Email *" field="email" type="email" placeholder="tu@email.com" />
-                    <Field label="Nombre completo *" field="name" placeholder="José Luis Campo" />
-                    <Field label="Teléfono" field="phone" placeholder="+57 300 000 0000" />
+                    <FormField label="Email *" field="email" type="email" placeholder="tu@email.com" value={form.email} onChange={handleFieldChange} error={errors.email} />
+                    <FormField label="Nombre completo *" field="name" placeholder="José Luis Campo" value={form.name} onChange={handleFieldChange} error={errors.name} />
+                    <FormField label="Teléfono" field="phone" placeholder="+57 300 000 0000" value={form.phone} onChange={handleFieldChange} error={errors.phone} />
                   </div>
                 )}
 
@@ -146,12 +172,12 @@ export default function CheckoutPage() {
                 {step === 1 && (
                   <div className="flex flex-col gap-5 animate-fade-up">
                     <h2 className="font-display text-xl font-bold text-white">Dirección de envío</h2>
-                    <Field label="Dirección *" field="address" placeholder="Calle 5 # 4-70" />
+                    <FormField label="Dirección *" field="address" placeholder="Calle 5 # 4-70" value={form.address} onChange={handleFieldChange} error={errors.address} />
                     <div className="grid grid-cols-2 gap-4">
-                      <Field label="Ciudad *" field="city" placeholder="Popayán" />
-                      <Field label="Departamento" field="department" placeholder="Cauca" />
+                      <FormField label="Ciudad *" field="city" placeholder="Popayán" value={form.city} onChange={handleFieldChange} error={errors.city} />
+                      <FormField label="Departamento" field="department" placeholder="Cauca" value={form.department} onChange={handleFieldChange} error={errors.department} />
                     </div>
-                    <Field label="Código postal" field="zip" placeholder="190001" />
+                    <FormField label="Código postal" field="zip" placeholder="190001" value={form.zip} onChange={handleFieldChange} error={errors.zip} />
                     {shipping === 0 && (
                       <div className="flex items-center gap-2 p-3 rounded-lg bg-success/10 border border-success/20 text-success text-sm">
                         ✓ ¡Envío gratuito aplicado!
@@ -186,22 +212,28 @@ export default function CheckoutPage() {
                       </button>
                     </div>
 
-                    <Field
+                    <FormField
                       label="Número de tarjeta *"
                       field="cardNumber"
                       placeholder="4242 4242 4242 4242"
                       transform={formatCard}
+                      value={form.cardNumber}
+                      onChange={handleFieldChange}
+                      error={errors.cardNumber}
                     />
                     <div className="grid grid-cols-2 gap-4">
-                      <Field
+                      <FormField
                         label="Vencimiento *"
                         field="cardExpiry"
                         placeholder="MM/AA"
                         transform={formatExpiry}
+                        value={form.cardExpiry}
+                        onChange={handleFieldChange}
+                        error={errors.cardExpiry}
                       />
-                      <Field label="CVV *" field="cardCvv" placeholder="123" />
+                      <FormField label="CVV *" field="cardCvv" placeholder="123" value={form.cardCvv} onChange={handleFieldChange} error={errors.cardCvv} />
                     </div>
-                    <Field label="Nombre en la tarjeta *" field="cardName" placeholder="JOSE LUIS CAMPO" />
+                    <FormField label="Nombre en la tarjeta *" field="cardName" placeholder="JOSE LUIS CAMPO" value={form.cardName} onChange={handleFieldChange} error={errors.cardName} />
                   </div>
                 )}
 
