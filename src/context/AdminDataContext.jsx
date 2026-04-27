@@ -1,13 +1,14 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useAuth } from './AuthContext'
 import { api } from '../lib/apiClient'
+import { PRODUCTS as LOCAL_PRODUCTS } from '../data/catalog'
 
 const AdminDataContext = createContext(null)
 
 const EMPTY_SETTINGS = {
-  storeName: 'TiendaOnline DDC',
-  supportEmail: 'soporte@tiendaddc.com',
-  supportPhone: '+57 602 000 0000',
+  storeName: 'Tienda DDC - Distribuidor Digital Colombia',
+  supportEmail: 'soporte@tiendaddc.com.co',
+  supportPhone: '+57 602 831 2000',
   taxRate: 19,
   freeShippingThreshold: 500000,
   currency: 'COP',
@@ -29,9 +30,15 @@ export function AdminDataProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true)
 
   const hydrateFromPublicApi = async () => {
-    const data = await api.storeBootstrap()
-    setProducts(data.products || [])
-    setStoreSettings(data.storeSettings || EMPTY_SETTINGS)
+    try {
+      const data = await api.storeBootstrap()
+      setProducts(data.products?.length > 0 ? data.products : LOCAL_PRODUCTS)
+      setStoreSettings(data.storeSettings || EMPTY_SETTINGS)
+    } catch {
+      // Fallback to local products if API is not available
+      setProducts(LOCAL_PRODUCTS)
+      setStoreSettings(EMPTY_SETTINGS)
+    }
   }
 
   const hydrateFromAdminApi = async (authToken) => {

@@ -1,123 +1,180 @@
-# TiendaOnline DDC
+# Tienda DDC - Distribuidor Digital Colombia
 
-Tienda online full-stack orientada a operacion real:
-- Frontend: React + Vite + Tailwind
-- Backend: Node.js + Express + Prisma + PostgreSQL
-- Integraciones objetivo: Stripe (pagos) y Shopify (sincronizacion de ordenes)
+Tienda online full-stack con arquitectura centrada en datos:
+- **Frontend:** React 18 + Vite + Tailwind CSS
+- **Backend:** Node.js + Express + Prisma + PostgreSQL
+- **Integraciones:** Stripe (pagos) y Shopify (sincronizacion)
 
 ## Arquitectura
 
-- Frontend consume API REST en `http://localhost:4000`
-- Backend maneja autenticacion JWT, permisos RBAC y modulos de admin
-- Prisma centraliza el esquema de datos para PostgreSQL
-
-## Modulos backend incluidos
-
-- Login real con JWT y hash de contrasenas (bcrypt)
-- Roles/permisos para modulo admin
-- Productos, ordenes, clientes, campañas, inventario, configuracion, actividad
-- Endpoint de orden publica para checkout
-- Endpoint Stripe PaymentIntent
-- Endpoint de sincronizacion de orden a Shopify
-
-## Estructura
-
-- `src/` frontend
-- `server/` backend Node + Prisma
-- `server/prisma/schema.prisma` esquema inicial
-- `server/prisma/seed.js` datos iniciales
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │───▶│    Backend      │───▶│   PostgreSQL    │
+│  React + Vite   │    │ Express + Prisma│    │    Railway      │
+│  localhost:5173 │    │  localhost:3001 │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
 
 ## Requisitos
 
-- Node 18+
-- PostgreSQL (local o Railway)
+- Node.js 18+
+- PostgreSQL (Railway recomendado)
+- Git
 
-## Configuracion local
+## Instalacion Rapida
 
-### 1. Frontend
+### 1. Clonar repositorio
 
-1. Instalar dependencias:
-   `npm install`
-2. Copiar variables:
-   copiar `.env.example` a `.env`
-3. Variable requerida:
-   `VITE_API_URL=http://localhost:4000`
+```bash
+git clone https://github.com/josecampoz/tienda-ddc.git
+cd tienda-ddc
+```
 
-### 2. Backend
+### 2. Instalar dependencias
 
-1. Instalar dependencias:
-   `npm run server:install`
-2. Copiar variables:
-   copiar `server/.env.example` a `server/.env`
-3. Configurar `DATABASE_URL` y `JWT_SECRET`
-4. Generar cliente Prisma:
-   `npm run prisma:generate`
-5. Ejecutar migraciones:
-   `npm run prisma:migrate`
-6. Seed inicial:
-   `npm run prisma:seed`
+```bash
+# Frontend
+npm install
 
-### 3. Ejecutar app
+# Backend
+cd server
+npm install
+```
 
-- Terminal 1 (backend):
-  `npm run dev:api`
-- Terminal 2 (frontend):
-  `npm run dev:web`
+### 3. Configurar variables de entorno
 
-Frontend: `http://localhost:5173`
-Backend: `http://localhost:4000`
+```bash
+# En carpeta raiz
+cp .env.example .env
 
-## Credenciales iniciales
+# En carpeta server
+cd server
+cp .env.example .env
+```
 
-- `root@tiendaddc.com` / `Admin123!`
-- `operaciones@tiendaddc.com` / `Manager123!`
-- `catalogo@tiendaddc.com` / `Catalogo123!`
-- `analitica@tiendaddc.com` / `Analyst123!`
+Editar `server/.env`:
+```env
+DATABASE_URL="postgresql://usuario:password@host:5432/database"
+JWT_SECRET="tu_secret_seguro_de_64_caracteres_minimo"
+PORT=3001
+```
 
-## Objetivo Stripe + Shopify
+### 4. Configurar base de datos
 
-### Stripe
+```bash
+cd server
 
-- Endpoint: `POST /api/integrations/stripe/payment-intent`
-- Requiere `STRIPE_SECRET_KEY` en `server/.env`
-- Se registra en tabla `StripePayment`
+# Generar cliente Prisma
+npx prisma generate
 
-### Shopify
+# Ejecutar migraciones
+npx prisma migrate deploy
 
-- Endpoint: `POST /api/integrations/shopify/orders/:orderCode/push`
-- Requiere:
-  - `SHOPIFY_STORE_DOMAIN`
-  - `SHOPIFY_ADMIN_TOKEN`
-  - `SHOPIFY_API_VERSION`
-- Se registra en tabla `ShopifySyncLog`
+# Poblar datos iniciales
+npx prisma db seed
+```
 
-## Railway (creditos gratuitos)
+### 5. Ejecutar aplicacion
 
-1. Crear proyecto en Railway
-2. Agregar servicio PostgreSQL
-3. Copiar `DATABASE_URL`
-4. Configurar variables del backend en Railway
-5. Deploy del backend desde carpeta `server/`
-6. Ejecutar migraciones en entorno Railway:
-   `npm run prisma:deploy`
-7. Seed de datos (si aplica en entorno inicial)
+**Terminal 1 - Backend:**
+```bash
+cd server
+npm run dev
+```
 
-## Endpoints principales
+**Terminal 2 - Frontend:**
+```bash
+npm run dev
+```
 
-- `GET /api/health`
-- `POST /api/auth/login`
-- `GET /api/auth/me`
-- `GET /api/admin/bootstrap`
-- `GET /api/store/bootstrap`
-- `POST /api/store/orders`
-- `POST /api/integrations/stripe/payment-intent`
-- `POST /api/integrations/shopify/orders/:orderCode/push`
+- Frontend: http://localhost:5173
+- Backend: http://localhost:3001
 
-## Nota de produccion
+## Credenciales de prueba
 
-Antes de salir a produccion:
-- Activar HTTPS
-- Usar rotacion de secretos
-- Configurar webhook real de Stripe
-- Validar politicas de CORS y rate limiting
-- Integrar observabilidad (logs + metricas)
+| Usuario | Email | Password |
+|---------|-------|----------|
+| Admin | root@tiendaddc.com | Admin123! |
+| Manager | operaciones@tiendaddc.com | Manager123! |
+| Catalogo | catalogo@tiendaddc.com | Catalogo123! |
+| Analista | analitica@tiendaddc.com | Analyst123! |
+
+## Tarjeta de prueba Stripe
+
+- Numero: `4242 4242 4242 4242`
+- Vencimiento: `12/28`
+- CVV: `123`
+
+## Estructura del proyecto
+
+```
+tienda-ddc/
+├── src/                    # Frontend React
+│   ├── components/         # Componentes reutilizables
+│   ├── context/           # Context providers
+│   ├── data/              # Datos estaticos
+│   ├── lib/               # Utilidades
+│   └── pages/             # Paginas
+├── server/                 # Backend Node.js
+│   ├── prisma/            # Schema y migraciones
+│   └── src/
+│       ├── lib/           # Prisma, JWT
+│       ├── middleware/    # Auth middleware
+│       └── routes/        # API routes
+└── scripts/               # Scripts de utilidad
+```
+
+## API Endpoints
+
+### Publicos
+- `GET /api/health` - Estado del servidor
+- `GET /api/store/bootstrap` - Productos y configuracion
+- `POST /api/store/orders` - Crear orden
+
+### Autenticacion
+- `POST /api/auth/login` - Iniciar sesion
+- `GET /api/auth/me` - Usuario actual
+
+### Admin (requiere JWT)
+- `GET /api/admin/bootstrap` - Datos admin
+- `PATCH /api/admin/products/:id` - Actualizar producto
+- `PATCH /api/admin/orders/:code/status` - Cambiar estado orden
+
+### Integraciones
+- `POST /api/integrations/stripe/payment-intent` - Crear pago
+- `POST /api/integrations/shopify/orders/:code/push` - Sincronizar orden
+
+## Railway (PostgreSQL)
+
+1. Crear cuenta en [railway.app](https://railway.app)
+2. Nuevo proyecto → Add PostgreSQL
+3. Ir a Variables → Copiar `DATABASE_URL`
+4. Pegar en `server/.env`
+
+## Generar JWT_SECRET seguro
+
+```bash
+cd server
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+```
+
+## Scripts disponibles
+
+```bash
+# Frontend
+npm run dev          # Desarrollo
+npm run build        # Build produccion
+npm run preview      # Preview build
+
+# Backend (desde carpeta server/)
+npm run dev          # Desarrollo con nodemon
+npm run start        # Produccion
+npx prisma studio    # GUI base de datos
+```
+
+## Notas de seguridad
+
+- JWT_SECRET debe ser unico y seguro (minimo 64 caracteres)
+- En produccion: HTTPS obligatorio
+- Configurar CORS para dominio especifico
+- No usar credenciales por defecto en produccion
