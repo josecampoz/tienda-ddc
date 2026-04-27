@@ -1,6 +1,6 @@
 export const AUTH_TOKEN_KEY = 'tienda_ddc_auth_token'
 
-const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:4000').replace(/\/$/, '')
+const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '')
 
 async function parseJson(response) {
   const text = await response.text()

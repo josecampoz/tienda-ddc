@@ -120,7 +120,6 @@ export default function CheckoutPage() {
       setStep(3)
       dispatch({ type: 'CLEAR' })
     } catch (error) {
-      console.error('[v0] Payment error:', error.message)
       setPaymentError(error.message || 'No fue posible procesar el pago. Por favor intenta de nuevo.')
     } finally {
       setLoading(false)
