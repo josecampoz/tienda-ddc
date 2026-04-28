@@ -32,27 +32,39 @@ async function parseJson(response) {
 export async function apiRequest(path, options = {}) {
   const { method = 'GET', body, token, headers = {} } = options
 
-  const response = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...headers,
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  })
+  try {
+    const response = await fetch(`${BASE_URL}${path}`, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    })
 
-  const data = await parseJson(response)
+    const data = await parseJson(response)
 
-  if (!response.ok) {
-    const message = data?.message || 'Error en la solicitud'
-    const error = new Error(message)
-    error.status = response.status
-    error.payload = data
+    if (!response.ok) {
+      const message = data?.message || 'Error en la solicitud'
+      const error = new Error(message)
+      error.status = response.status
+      error.payload = data
+      throw error
+    }
+
+    return data
+  } catch (error) {
+    // Si es un error de red (backend no disponible)
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      const message = `No se pudo conectar al servidor (${BASE_URL}). ¿Está el backend corriendo en el puerto 3001?`
+      const err = new Error(message)
+      err.status = 0
+      err.isNetworkError = true
+      throw err
+    }
     throw error
   }
-
-  return data
 }
 
 export const api = {

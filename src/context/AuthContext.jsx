@@ -93,7 +93,14 @@ export function AuthProvider({ children }) {
 
       return true
     } catch (error) {
-      setAuthError(error.message || 'No fue posible iniciar sesion')
+      let errorMessage = error.message || 'No fue posible iniciar sesion'
+      
+      // Mejorar mensaje de error de red
+      if (error.isNetworkError) {
+        errorMessage = 'Backend no disponible. Asegúrate de que el servidor está corriendo en http://localhost:3001. Para desarrollo, ejecuta: cd server && npm run dev'
+      }
+      
+      setAuthError(errorMessage)
       return false
     }
   }

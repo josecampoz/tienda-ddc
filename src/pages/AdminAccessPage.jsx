@@ -93,7 +93,16 @@ export default function AdminAccessPage() {
 
             {authError && (
               <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
-                {authError}
+                <div className="font-mono font-bold mb-1">Error de conexion</div>
+                <div className="text-xs mb-2">{authError}</div>
+                {authError.includes('Backend no disponible') && (
+                  <div className="mt-3 pt-2 border-t border-danger/20">
+                    <div className="text-xs text-amber-300 mb-1">Para desarrollo local, ejecuta en otra terminal:</div>
+                    <code className="text-xs bg-danger/20 px-2 py-1 rounded block font-mono whitespace-wrap break-all">
+                      cd server && npm run dev
+                    </code>
+                  </div>
+                )}
               </div>
             )}
 
