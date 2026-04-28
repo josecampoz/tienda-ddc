@@ -1,6 +1,24 @@
 export const AUTH_TOKEN_KEY = 'tienda_ddc_auth_token'
 
-const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '')
+// Detectar si VITE_API_URL es incorrectamente una URL de base de datos
+const getApiUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL
+  
+  // Si no hay URL configurada, usar localhost
+  if (!envUrl) {
+    return 'http://localhost:3001'
+  }
+  
+  // Si es una URL de PostgreSQL (error comun), ignorarla y usar localhost
+  if (envUrl.startsWith('postgresql://') || envUrl.startsWith('postgres://')) {
+    console.warn('VITE_API_URL contiene una URL de base de datos. Usando localhost:3001 en su lugar.')
+    return 'http://localhost:3001'
+  }
+  
+  return envUrl.replace(/\/$/, '')
+}
+
+const BASE_URL = getApiUrl()
 
 async function parseJson(response) {
   const text = await response.text()
