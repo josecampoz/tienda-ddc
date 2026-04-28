@@ -97,7 +97,7 @@ export function AuthProvider({ children }) {
       
       // Mejorar mensaje de error de red
       if (error.isNetworkError) {
-        errorMessage = 'Backend no disponible. Asegúrate de que el servidor está corriendo en http://localhost:3001. Para desarrollo, ejecuta: cd server && npm run dev'
+        errorMessage = 'Backend no disponible. Asegúrate de que el servidor está corriendo en http://localhost:4000. Para desarrollo, ejecuta: cd server && npm run dev'
       }
       
       setAuthError(errorMessage)

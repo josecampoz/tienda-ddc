@@ -4,15 +4,14 @@ export const AUTH_TOKEN_KEY = 'tienda_ddc_auth_token'
 const getApiUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL
   
-  // Si no hay URL configurada, usar localhost
+  // Si no hay URL configurada, usar localhost:4000 (puerto por defecto del backend)
   if (!envUrl) {
-    return 'http://localhost:3001'
+    return 'http://localhost:4000'
   }
   
   // Si es una URL de PostgreSQL (error comun), ignorarla y usar localhost
   if (envUrl.startsWith('postgresql://') || envUrl.startsWith('postgres://')) {
-    console.warn('VITE_API_URL contiene una URL de base de datos. Usando localhost:3001 en su lugar.')
-    return 'http://localhost:3001'
+    return 'http://localhost:4000'
   }
   
   return envUrl.replace(/\/$/, '')
@@ -57,7 +56,7 @@ export async function apiRequest(path, options = {}) {
   } catch (error) {
     // Si es un error de red (backend no disponible)
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      const message = `No se pudo conectar al servidor (${BASE_URL}). ¿Está el backend corriendo en el puerto 3001?`
+      const message = `No se pudo conectar al servidor (${BASE_URL}). ¿Está el backend corriendo en el puerto 4000?`
       const err = new Error(message)
       err.status = 0
       err.isNetworkError = true
